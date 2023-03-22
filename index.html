@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Bretagne ou pas Bretagne</title>
+  </head>
+  <body>
+    <h1>Bretagne ou pas Bretagne</h1>
+    <p>Merci d'uploader une image</p>
+
+    <input type="file" id="image-input" />
+
+    <div id="result"></div>
+
+    <img id="image-view" style="max-width: 500px" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.8.0/dist/tf.min.js"></script>
+    <script>
+      document
+        .getElementById("image-input")
+        .addEventListener("change", classifyImage);
+
+      async function classifyImage(e) {
+        const file = e.target.files[0];
+        const result = document.getElementById("result");
+        const imageView = document.getElementById("image-view");
+
+        if (!file) return;
+
+        imageView.src = URL.createObjectURL(file);
+        result.innerHTML = `<div><h1>Loading</h1></div>`;
+
+        try {
+          // Load the model
+          const model = await tf.loadGraphModel("model/model.json");
+
+          // Create an HTMLImageElement from the file
+          const img = new Image();
+          img.onload = async () => {
+            // Convert the image to a tensor
+            const tensor = tf.browser
+              .fromPixels(img)
+              .resizeBilinear([224, 224])
+              .expandDims();
+
+            // Make a prediction
+            const prediction = await model.predict(tensor);
+            const output = prediction.dataSync();
+
+            // Display the prediction result
+            result.innerHTML = `<div>
+                            <h1>Proba Bretagne: ${output[0] * 100} %</h1>
+                            <h1>Proba non Bretagne: ${output[1] * 100} %</h1>
+                        </div>`;
+          };
+          img.src = URL.createObjectURL(file);
+        } catch (err) {
+          result.innerHTML = `<div><h1>Oups error: ${err}</h1></div>`;
+        }
+      }
+    </script>
+  </body>
+</html>
