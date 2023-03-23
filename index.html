@@ -43,13 +43,6 @@
         classifyImage(url);
       }
 
-      function getUrl(e) {
-        e.preventDefault();
-        const url = event.target.querySelector("#url-input").value;
-        if (!url) return;
-        classifyImage(url);
-      }
-
       async function classifyImage(url) {
         const result = document.getElementById("result");
         const imageView = document.getElementById("image-view");
@@ -58,27 +51,27 @@
         result.innerHTML = `<div><h1>Loading</h1></div>`;
 
         try {
-          // Load the model
-          const model = await tf.loadGraphModel("model/model.json");
+          // Load the MobileNet model
+          const mobileNetModel = await mobilenet.load();
 
           // Create an HTMLImageElement from the file
           const img = new Image();
           img.onload = async () => {
-            // Convert the image to a tensor
-            const tensor = tf.browser
-              .fromPixels(img)
-              .resizeBilinear([224, 224])
-              .expandDims();
+            // Classify the image
+            const predictions = await mobileNetModel.classify(img);
 
-            // Make a prediction
-            const prediction = await model.predict(tensor);
-            const output = prediction.dataSync();
+            console.log(predictions);
+            // Check if any label contains the word "flag"
+            const flagPresent = predictions.some((p) =>
+              p.className.includes("flag")
+            );
 
             // Display the prediction result
-            result.innerHTML = `<div>
-                            <h1>Proba Bretagne: ${output[0] * 100} %</h1>
-                            <h1>Proba non Bretagne: ${output[1] * 100} %</h1>
-                        </div>`;
+            if (flagPresent) {
+              result.innerHTML = `<div><h1>A flag is present in the image</h1></div>`;
+            } else {
+              result.innerHTML = `<div><h1>No flag is present in the image</h1></div>`;
+            }
           };
 
           img.onerror = () => {
