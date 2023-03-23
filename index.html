@@ -5,28 +5,56 @@
   </head>
   <body>
     <h1>Bretagne ou pas Bretagne</h1>
-    <p>Merci d'uploader une image</p>
 
-    <input type="file" id="image-input" />
+    <div style="display: flex; flex-direction: row; width: 100%">
+      <div style="width: 45%">
+        <p>Merci d'uploader une image</p>
+
+        <input type="file" id="image-input" />
+      </div>
+
+      <!-- <div style="width: 45%">
+        <p>Ou bien le lien d'une image</p>
+
+        <form id="url-form">
+          <input id="url-input" type="text" style="width: 100%" />
+        </form>
+      </div> -->
+    </div>
 
     <div id="result"></div>
 
     <img id="image-view" style="max-width: 500px" />
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.8.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@1.0.0"></script>
+
     <script>
       document
         .getElementById("image-input")
-        .addEventListener("change", classifyImage);
+        .addEventListener("change", getImage);
 
-      async function classifyImage(e) {
+      // document.getElementById("url-form").addEventListener("submit", getUrl);
+
+      function getImage(e) {
         const file = e.target.files[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        classifyImage(url);
+      }
+
+      function getUrl(e) {
+        e.preventDefault();
+        const url = event.target.querySelector("#url-input").value;
+        if (!url) return;
+        classifyImage(url);
+      }
+
+      async function classifyImage(url) {
         const result = document.getElementById("result");
         const imageView = document.getElementById("image-view");
 
-        if (!file) return;
-
-        imageView.src = URL.createObjectURL(file);
+        imageView.src = url;
         result.innerHTML = `<div><h1>Loading</h1></div>`;
 
         try {
@@ -52,7 +80,12 @@
                             <h1>Proba non Bretagne: ${output[1] * 100} %</h1>
                         </div>`;
           };
-          img.src = URL.createObjectURL(file);
+
+          img.onerror = () => {
+            result.innerHTML = `<div><h1>Oups error: ${err}</h1></div>`;
+          };
+
+          img.src = url;
         } catch (err) {
           result.innerHTML = `<div><h1>Oups error: ${err}</h1></div>`;
         }
