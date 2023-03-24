@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Bretagne ou pas Bretagne</title>
+    <title>Drapeau ou pas Drapeau</title>
   </head>
   <body>
-    <h1>Bretagne ou pas Bretagne</h1>
+    <h1>Drapeau ou pas Drapeau</h1>
 
     <div style="display: flex; flex-direction: row; width: 100%">
       <div style="width: 45%">
@@ -27,25 +27,32 @@
     <img id="image-view" style="max-width: 500px" />
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 
     <script>
       document
         .getElementById("image-input")
-        .addEventListener("change", classifyImage);
+        .addEventListener("change", getImage);
 
-      async function classifyImage(e) {
+      function getImage(e) {
         const file = e.target.files[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        classifyImage(url);
+      }
+
+      async function classifyImage(url) {
         const result = document.getElementById("result");
         const imageView = document.getElementById("image-view");
 
-        if (!file) return;
-
-        imageView.src = URL.createObjectURL(file);
+        imageView.src = url;
         result.innerHTML = `<div><h1>Loading</h1></div>`;
 
         try {
           // Load the model
-          const model = await tf.loadGraphModel("model/model.json");
+          const model = await tf.loadLayersModel(
+            "https://tfhub.dev/google/imagenet/resnet_v2_50/classification/5?tfjs-format=compressed"
+          );
 
           // Create an HTMLImageElement from the file
           const img = new Image();
@@ -56,17 +63,25 @@
               .resizeBilinear([224, 224])
               .expandDims();
 
+            // Normalize the image
+            const normalized = tensor.div(255.0);
+
             // Make a prediction
-            const prediction = await model.predict(tensor);
+            const prediction = await model.predict(normalized);
             const output = prediction.dataSync();
 
             // Display the prediction result
             result.innerHTML = `<div>
-                            <h1>Proba Bretagne: ${output[0] * 100} %</h1>
-                            <h1>Proba non Bretagne: ${output[1] * 100} %</h1>
+                            <h1>Proba Flag: ${output[1] * 100} %</h1>
+                            <h1>Proba non Flag: ${output[0] * 100} %</h1>
                         </div>`;
           };
-          img.src = URL.createObjectURL(file);
+
+          img.onerror = () => {
+            result.innerHTML = `<div><h1>Oups error: ${err}</h1></div>`;
+          };
+
+          img.src = url;
         } catch (err) {
           result.innerHTML = `<div><h1>Oups error: ${err}</h1></div>`;
         }
