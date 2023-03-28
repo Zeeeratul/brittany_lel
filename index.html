@@ -12,14 +12,6 @@
 
         <input type="file" id="image-input" />
       </div>
-
-      <!-- <div style="width: 45%">
-        <p>Ou bien le lien d'une image</p>
-
-        <form id="url-form">
-          <input id="url-input" type="text" style="width: 100%" />
-        </form>
-      </div> -->
     </div>
 
     <div id="result"></div>
@@ -45,7 +37,7 @@
 
         try {
           // Load the model
-          const model = await tf.loadGraphModel("model/model.json");
+          const model = await tf.loadGraphModel("brittany_model/model.json");
 
           // Create an HTMLImageElement from the file
           const img = new Image();
